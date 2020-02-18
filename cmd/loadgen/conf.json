@@ -1,0 +1,10 @@
+{
+  "url": "http://localhost:9999",
+  "method": "POST",
+  "amount": 2000,
+  "target_rps": 1000,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "payload": "{\"type\": \"json\",\"current\": \"$CURRENT\",\"total\": \"$TOTAL\"}"
+}
