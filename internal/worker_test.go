@@ -15,8 +15,9 @@ func TestFire(t *testing.T) {
 	*count = 0
 
 	mock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//time.Sleep(time.Duration(rand.Intn(73) + rand.Intn(3) + 2) * time.Millisecond)
 		atomic.AddInt64(count, 1)
-		body, err := ioutil.ReadAll(r.Body)
+		_, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		if err != nil {
@@ -24,17 +25,37 @@ func TestFire(t *testing.T) {
 			t.Error("Cannot read body from test request")
 			return
 		}
-		fmt.Println(string(body))
+		if atomic.LoadInt64(count)%100 == 0 {
+			hj, ok := w.(http.Hijacker)
+			if !ok {
+				http.Error(w, "server error", 500)
+				return
+			}
+			conn, buf, err := hj.Hijack()
+			if err != nil {
+				http.Error(w, "server error", 500)
+				return
+			}
+			_, _ = buf.WriteString("ERR_NETWORK")
+			_ = buf.Flush()
+			_ = conn.Close()
+			return
+		}
+		if atomic.LoadInt64(count)%50 == 0 {
+			http.Error(w, "server error", 502)
+		}
+		//fmt.Println(string(body))
 	}))
 
 	config := Config{
 		Url:       mock.URL,
-		Amount:    10,
+		Amount:    1000,
 		TargetRPS: 10000,
 		Headers: map[string]string{
 			"Content-Type": "text/plain",
 		},
 		Payload: "Sending req #$CURRENT of $TOTAL",
+		Logfile: "results.log",
 	}
 	worker := NewWorker(config)
 
@@ -42,7 +63,7 @@ func TestFire(t *testing.T) {
 	worker.Run()
 
 	fmt.Printf("%d hits for %v\n", *count, time.Since(start))
-	if *count != 10 {
+	if *count != 1000 {
 		t.Error("Count mismatch")
 	}
 }

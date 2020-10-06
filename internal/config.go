@@ -7,4 +7,5 @@ type Config struct {
 	TargetRPS int               `json:"target_rps,omitempty"`
 	Headers   map[string]string `json:"headers"`
 	Payload   string            `json:"payload"`
+	Logfile   string            `json:"logfile"`
 }
